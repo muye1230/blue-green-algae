@@ -630,97 +630,147 @@
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 1.8);
         }
+　　　　// ========== 背景音乐配置 ==========
+const musicList = [
+    {
+        name: 'Lot to Learn - 柳轻颂',
+        url: 'lot_to_learn.mp3' 
+    },
+    {
+        name: '星茶会 (钢琴版) - 兮沐',
+        url: '星茶会.mp3'
+    }
+];
 
-        // ========== 背景音乐 ==========
-        const musicList = [
-            { name: 'Lot to Learn - 柳轻颂', url: 'lot_to_learn.mp3' },
-            { name: '星茶会 (钢琴版) - 兮沐', url: '星茶会.mp3' }
-        ];
-        let currentMusicIndex = 0;
-        let bgAudio = new Audio();
-        bgAudio.loop = false;
-        bgAudio.volume = 0.6;
+let currentMusicIndex = 0;
+let isMusicPlaying = false; // 全局播放状态标志
+let bgAudio = new Audio();
+bgAudio.volume = 0.6; // 音量 60%
 
-        function initBackgroundMusic() {
-            bgAudio.src = musicList[currentMusicIndex].url;
-            bgAudio.addEventListener('ended', () => {
-                currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
-                bgAudio.src = musicList[currentMusicIndex].url;
-                if (isMusicPlaying) bgAudio.play().catch(e => console.log(e));
+// 初始化音乐
+function initBackgroundMusic() {
+    loadMusic(currentMusicIndex);
+    
+    // 1. 监听播放结束 -> 自动切歌
+    bgAudio.addEventListener('ended', () => {
+        console.log('🎵 歌曲播放结束，准备切换下一首...');
+        switchMusic();
+    });
+
+    // 2. 监听加载错误
+    bgAudio.addEventListener('error', (e) => {
+        console.error('❌ 音乐加载失败:', e);
+        musicInfo.textContent = '⚠️ 音乐加载失败';
+        isMusicPlaying = false;
+        updateMusicIcon(); // 更新图标为暂停状
+    });
+    
+    // 3. 监听可以播放时（可选，用于调试）
+    bgAudio.addEventListener('canplay', () => {
+        console.log('✅ 音乐已就绪:', musicList[currentMusicIndex].name);
+    });
+}
+
+// 加载指定索引的音乐
+function loadMusic(index) {
+    const music = musicList[index];
+    bgAudio.src = music.url;
+    bgAudio.load(); // 强制重新加载资源
+    
+    // 更新界面文字
+    if (musicInfo) {
+        musicInfo.textContent = music.name;
+    }
+    console.log('🔄 已加载音乐:', music.name);
+}
+
+// 切换下一首逻辑
+function switchMusic() {
+    // 计算下一首索引
+    currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
+    
+    // 关键修复：确保状态是“正在播放”，否则下一首不会自动开始
+    isMusicPlaying = true; 
+    
+    // 加载新音乐
+    loadMusic(currentMusicIndex);
+    
+    // 尝试播放
+    const playPromise = bgAudio.play();
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            console.log('▶️ 下一首自动播放成功');
+            updateMusicIcon(); // 确保图标是播放状态
+        }).catch(error => {
+            console.error('⚠️ 自动播放被浏览器拦截或失败:', error);
+            // 如果自动播放失败，暂停状态
+            isMusicPlaying = false;
+            updateMusicIcon();
+        });
+    }
+}
+
+// 核心控制：播放/暂停 切换
+function toggleMusic() {
+    if (!bgAudio.src) {
+        // 如果还没加载过，先加载
+        loadMusic(currentMusicIndex);
+    }
+
+    if (isMusicPlaying) {
+        // 当前正在播放 -> 执行暂停
+        bgAudio.pause();
+        isMusicPlaying = false;
+        console.log('⏸️ 音乐已暂停');
+    } else {
+        // 当前已暂停 -> 执行播放
+        const playPromise = bgAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                isMusicPlaying = true;
+                console.log('▶️ 音乐已播放');
+            }).catch(error => {
+                console.error('❌ 播放失败:', error);
+                // 某些浏览器可能需要用户交互才能播放，这里不做特殊处理，依靠按钮点击本身作为交互
             });
         }
+    }
+    
+    // 无论成功失败，都更新图标
+    updateMusicIcon();
+}
 
-        function toggleMusic() {
-            if (isMusicPlaying) {
-                bgAudio.pause();
-                musicBtn.textContent = '🎵';
-                musicBtn.classList.remove('playing');
-                isMusicPlaying = false;
-            } else {
-                bgAudio.play().then(() => {
-                    musicBtn.textContent = '⏸️';
-                    musicBtn.classList.add('playing');
-                    isMusicPlaying = true;
-                }).catch(e => console.log(e));
-            }
+// 更新右上角图标 (根据你的实际图标类名调整)
+function updateMusicIcon() {
+    // 假设你的图标元素类名为 .music-icon 或类似，这里根据你之前的代码逻辑
+    // 如果你的图标是通过 CSS 类控制的，请确保这里有对应的类名切换
+    // 例如：
+    const iconElement = document.querySelector('.music-control i') || document.querySelector('.fa-play') || document.querySelector('.fa-pause');
+    
+    if (iconElement) {
+        if (isMusicPlaying) {
+            // 播放状态：显示暂停图标
+            iconElement.classList.remove('fa-play');
+            iconElement.classList.add('fa-pause');
+            // 如果是其他图标库，请相应修改，例如：
+            // iconElement.className = 'icon-pause'; 
+        } else {
+            // 暂停状态：显示播放图标
+            iconElement.classList.remove('fa-pause');
+            iconElement.classList.add('fa-play');
         }
+    }
+    
+    // 同时更新文字提示（如果有）
+    if (musicInfo && !musicInfo.textContent.includes('⚠️')) {
+         // 保持歌名不变，除非出错
+    }
+}
 
-        musicBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
-        function updateMusicInfo() { musicInfo.textContent = musicList[currentMusicIndex].name; }
-
-        // ========== 事件处理 ==========
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            initAudioContext();
-            for (let touch of e.touches) {
-                createAlgaeBurst(touch.clientX, touch.clientY);
-                playPianoNote();
-            }
-        }, { passive: false });
-
-        canvas.addEventListener('click', (e) => {
-            initAudioContext();
-            createAlgaeBurst(e.clientX, e.clientY);
-            playPianoNote();
-        });
-
-        document.addEventListener('keydown', (e) => {
-            initAudioContext();
-            createAlgaeBurst(window.innerWidth * 0.5, window.innerHeight * 0.7);
-            playPianoNote();
-        });
-
-        canvas.addEventListener('mousedown', (e) => {
-            initAudioContext();
-            createAlgaeBurst(e.clientX, e.clientY);
-            playPianoNote();
-        });
-
-        // ========== 初始化 ==========
-        startBtn.addEventListener('click', () => {
-            initAudioContext();
-            initBackgroundMusic();
-            updateMusicInfo();
-            initBackgroundParticles();
-            
-            loading.classList.add('hidden');
-            startBtn.classList.add('hidden');
-            toggleMusic();
-            animate();
-            
-            setTimeout(() => {
-                for (let i = 0; i < 3; i++) {
-                    setTimeout(() => {
-                        createAlgaeBurst(window.innerWidth * 0.5, window.innerHeight * 0.8);
-                    }, i * 400);
-                }
-            }, 500);
-        });
-
-        window.addEventListener('load', () => {
-            setTimeout(() => loading.classList.add('hidden'), 1000);
-        });
-
+// 确保在页面加载时初始化
+// 注意：不要在页面加载时直接 play()，要在用户点击按钮后调用 initBackgroundMusic 和 toggleMusic
+     
+       
         // 性能限制
         const MAX_PARTICLES = 350;
         setInterval(() => {
