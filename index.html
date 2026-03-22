@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
     <meta name="wechat-enable-web-view-scroll" content="false">
-    <title>🌊 魔法蓝藻 - 梦幻浮动特效</title>
+    <title>🌊 魔法蓝藻 - 梦幻浮动</title>
     <style>
         * {
             margin: 0;
@@ -21,7 +21,7 @@
 
         body {
             overflow: hidden;
-            background: linear-gradient(180deg, #e8f4f8 0%, #b8d8e8 50%, #88c0d8 100%);
+            background: linear-gradient(180deg, #0a1628 0%, #1a2840 40%, #2a3850 70%, #1a2840 100%);
             touch-action: none;
             width: 100vw;
             height: 100vh;
@@ -35,6 +35,19 @@
             left: 0;
             width: 100%;
             height: 100%;
+            filter: blur(1px) contrast(1.1);
+        }
+
+        /* 光晕层 */
+        .glow-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 50% 80%, rgba(0, 150, 200, 0.15) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 50;
         }
 
         /* 音乐控制面板 */
@@ -46,11 +59,12 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
             padding: 8px 15px;
             border-radius: 25px;
             backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .music-btn {
@@ -58,7 +72,7 @@
             height: 40px;
             border-radius: 50%;
             border: none;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
             color: white;
             font-size: 18px;
             cursor: pointer;
@@ -66,7 +80,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4);
         }
 
         .music-btn:active {
@@ -78,14 +92,14 @@
         }
 
         @keyframes pulse-music {
-            0%, 100% { box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4); }
-            50% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.8); }
+            0%, 100% { box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4); }
+            50% { box-shadow: 0 4px 20px rgba(0, 198, 255, 0.8); }
         }
 
         .music-info {
-            color: #333;
+            color: rgba(255, 255, 255, 0.8);
             font-size: 12px;
-            max-width: 150px;
+            max-width: 140px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -94,19 +108,19 @@
         /* 提示文字 */
         .hint {
             position: fixed;
-            bottom: 40px;
+            bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(50, 80, 100, 0.8);
-            font-size: 15px;
+            color: rgba(200, 230, 255, 0.7);
+            font-size: 14px;
             font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
             text-align: center;
             pointer-events: none;
             z-index: 100;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-            animation: hint-fade 3s ease-in-out forwards;
+            text-shadow: 0 0 15px rgba(0, 200, 255, 0.8);
+            animation: hint-fade 4s ease-in-out forwards;
             padding: 0 20px;
-            line-height: 1.6;
+            line-height: 1.8;
         }
 
         @keyframes hint-fade {
@@ -119,26 +133,26 @@
             position: fixed;
             top: 10px;
             left: 10px;
-            background: rgba(255,255,255,0.4);
+            background: rgba(0, 200, 255, 0.15);
             padding: 5px 12px;
             border-radius: 15px;
-            color: rgba(50, 80, 100, 0.7);
+            color: rgba(200, 230, 255, 0.7);
             font-size: 12px;
             pointer-events: none;
             z-index: 1000;
+            border: 1px solid rgba(0, 200, 255, 0.2);
         }
 
-        /* 装饰元素 - 水波纹 */
-        .wave-decoration {
+        /* 装饰元素 - 底部光点 */
+        .bottom-lights {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 100px;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.3' d='M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
-            background-size: cover;
+            height: 80px;
+            background: radial-gradient(ellipse at 50% 100%, rgba(0, 200, 255, 0.3) 0%, transparent 70%);
             pointer-events: none;
-            z-index: 50;
+            z-index: 40;
         }
 
         /* 加载提示 */
@@ -148,7 +162,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(180deg, #e8f4f8 0%, #b8d8e8 100%);
+            background: linear-gradient(180deg, #0a1628 0%, #1a2840 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -163,19 +177,21 @@
         }
 
         .loading-text {
-            color: #335577;
+            color: rgba(200, 230, 255, 0.9);
             font-size: 18px;
             margin-top: 20px;
             font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+            text-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
         }
 
         .loading-spinner {
             width: 50px;
             height: 50px;
-            border: 4px solid rgba(102, 126, 234, 0.2);
-            border-top-color: #667eea;
+            border: 4px solid rgba(0, 200, 255, 0.2);
+            border-top-color: #00c6ff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            box-shadow: 0 0 30px rgba(0, 200, 255, 0.5);
         }
 
         @keyframes spin {
@@ -188,17 +204,18 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            padding: 15px 40px;
+            padding: 18px 45px;
             font-size: 18px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
             color: white;
             border: none;
-            border-radius: 30px;
+            border-radius: 35px;
             cursor: pointer;
             z-index: 10000;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 40px rgba(0, 198, 255, 0.5);
             transition: all 0.3s ease;
             font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+            letter-spacing: 2px;
         }
 
         .start-btn:active {
@@ -209,22 +226,36 @@
             opacity: 0;
             pointer-events: none;
         }
+
+        /* 浮动粒子背景 */
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 30;
+        }
     </style>
 </head>
 <body>
     <!-- 加载页面 -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
-        <div class="loading-text">正在加载魔法蓝藻...</div>
+        <div class="loading-text">正在唤醒魔法蓝藻...</div>
     </div>
 
-    <!-- 开始按钮（用于触发音频播放） -->
-    <button class="start-btn" id="startBtn">✨ 开启魔法蓝藻之旅</button>
+    <!-- 开始按钮 -->
+    <button class="start-btn" id="startBtn">🌊 开启梦幻之旅</button>
 
     <canvas id="canvas"></canvas>
     
-    <!-- 水波装饰 -->
-    <div class="wave-decoration"></div>
+    <!-- 光晕层 -->
+    <div class="glow-layer"></div>
+    
+    <!-- 底部光效 -->
+    <div class="bottom-lights"></div>
     
     <!-- 微信提示 -->
     <div class="wechat-hint" id="wechatHint"></div>
@@ -232,14 +263,14 @@
     <!-- 音乐控制 -->
     <div class="music-control">
         <button class="music-btn" id="musicBtn">🎵</button>
-        <div class="music-info" id="musicInfo">点击播放音乐</div>
+        <div class="music-info" id="musicInfo">点击播放</div>
     </div>
     
     <!-- 提示文字 -->
     <div class="hint" id="hint">
         📱 手机：点击屏幕任意位置<br>
         💻 电脑：按任意键 或 点击鼠标<br>
-        🌊 观看蓝藻梦幻浮动
+        ✨ 聆听钢琴，观赏蓝藻
     </div>
 
     <script>
@@ -261,7 +292,7 @@
             wechatHint.textContent = '🌊 微信中打开';
         }
 
-        // 设置画布尺寸（高清屏优化）
+        // 设置画布尺寸
         function resizeCanvas() {
             canvas.width = window.innerWidth * window.devicePixelRatio;
             canvas.height = window.innerHeight * window.devicePixelRatio;
@@ -272,115 +303,167 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // 防止微信下拉刷新和页面滚动
+        // 防止微信下拉刷新
         document.body.addEventListener('touchmove', function(e) {
             e.preventDefault();
         }, { passive: false });
 
-        // ========== 蓝藻粒子类 ==========
-        class AlgaeParticle {
+        // ========== 蓝藻团块类（群体效果） ==========
+        class AlgaeCluster {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.originY = y;
-                // 蓝藻颜色 - 多种蓝色调
-                const colors = [
-                    'rgba(0, 150, 255, ',
-                    'rgba(0, 180, 255, ',
-                    'rgba(50, 200, 255, ',
-                    'rgba(100, 220, 255, ',
-                    'rgba(0, 120, 200, ',
-                    'rgba(80, 180, 240, '
-                ];
-                this.baseColor = colors[Math.floor(Math.random() * colors.length)];
-                this.alpha = 0.8;
-                this.size = 2 + Math.random() * 3; // 缩小尺寸
-                this.velocityY = -0.5 - Math.random() * 1.5; // 向上浮动
-                this.velocityX = (Math.random() - 0.5) * 0.8; // 轻微左右摆动
+                this.particles = [];
+                this.velocityY = -1.5 - Math.random() * 2;
+                this.velocityX = (Math.random() - 0.5) * 1.5;
                 this.wobble = Math.random() * Math.PI * 2;
-                this.wobbleSpeed = 0.02 + Math.random() * 0.03;
-                this.wobbleAmount = 0.5 + Math.random() * 0.5;
-                this.trail = [];
-                this.maxTrailLength = 15 + Math.floor(Math.random() * 10);
+                this.wobbleSpeed = 0.03 + Math.random() * 0.02;
+                this.wobbleAmount = 1 + Math.random() * 2;
+                this.alpha = 1;
+                this.decay = 0.015 + Math.random() * 0.01; // 加快消失速度
                 this.life = 1;
-                this.decay = 0.003 + Math.random() * 0.004;
-                this.glow = 10 + Math.random() * 15;
+                
+                // 创建团块内的多个粒子（群体性）
+                const particleCount = 8 + Math.floor(Math.random() * 12);
+                for (let i = 0; i < particleCount; i++) {
+                    this.particles.push({
+                        offsetX: (Math.random() - 0.5) * 50,
+                        offsetY: (Math.random() - 0.5) * 50,
+                        size: 3 + Math.random() * 8,
+                        alpha: 0.6 + Math.random() * 0.4,
+                        color: this.getRandomBlueColor()
+                    });
+                }
+            }
+
+            getRandomBlueColor() {
+                const colors = [
+                    { r: 0, g: 200, b: 255 },
+                    { r: 0, g: 180, b: 230 },
+                    { r: 50, g: 220, b: 255 },
+                    { r: 100, g: 240, b: 255 },
+                    { r: 0, g: 150, b: 200 },
+                    { r: 80, g: 200, b: 240 }
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
             }
 
             draw() {
-                // 绘制拖尾
-                if (this.trail.length > 1) {
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
-                    for (let i = 1; i < this.trail.length; i++) {
-                        const point = this.trail[i];
-                        const trailAlpha = (i / this.trail.length) * this.alpha * 0.5;
-                        ctx.lineTo(point.x, point.y);
-                    }
-                    ctx.strokeStyle = this.baseColor + (this.alpha * 0.3) + ')';
-                    ctx.lineWidth = this.size * 0.6;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    ctx.shadowBlur = this.glow * 0.5;
-                    ctx.shadowColor = this.baseColor + this.alpha + ')';
-                    ctx.stroke();
-                    ctx.restore();
-                }
-
-                // 绘制蓝藻主体
+                // 绘制团块（模糊群体效果）
                 ctx.save();
+                
+                // 外层光晕
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, 60
+                );
+                gradient.addColorStop(0, `rgba(0, 200, 255, ${this.alpha * 0.3})`);
+                gradient.addColorStop(0.5, `rgba(0, 150, 200, ${this.alpha * 0.15})`);
+                gradient.addColorStop(1, 'rgba(0, 100, 150, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 60, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 绘制团块内的各个粒子
+                this.particles.forEach(p => {
+                    const px = this.x + p.offsetX + Math.sin(this.wobble) * this.wobbleAmount;
+                    const py = this.y + p.offsetY;
+                    
+                    const particleGradient = ctx.createRadialGradient(
+                        px, py, 0,
+                        px, py, p.size * 2
+                    );
+                    particleGradient.addColorStop(0, `rgba(${p.r}, ${p.g}, ${p.b}, ${p.alpha * this.alpha})`);
+                    particleGradient.addColorStop(0.5, `rgba(${p.r}, ${p.g}, ${p.b}, ${p.alpha * this.alpha * 0.5})`);
+                    particleGradient.addColorStop(1, `rgba(${p.r}, ${p.g}, ${p.b}, 0)`);
+                    
+                    ctx.fillStyle = particleGradient;
+                    ctx.beginPath();
+                    ctx.arc(px, py, p.size * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                ctx.restore();
+            }
+
+            update() {
+                this.y += this.velocityY;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * this.wobbleAmount * 0.3 + this.velocityX * 0.3;
+                this.alpha -= this.decay;
+                this.life -= this.decay;
+                
+                // 粒子轻微扩散
+                this.particles.forEach(p => {
+                    p.offsetY -= 0.3;
+                    p.offsetX += (Math.random() - 0.5) * 0.5;
+                });
+            }
+
+            isDead() {
+                return this.alpha <= 0 || this.y < -100;
+            }
+        }
+
+        // ========== 背景浮动粒子 ==========
+        class BackgroundParticle {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * window.innerHeight;
+            }
+
+            reset() {
+                this.x = Math.random() * window.innerWidth;
+                this.y = window.innerHeight + 50;
+                this.size = 1 + Math.random() * 3;
+                this.velocityY = -0.2 - Math.random() * 0.3;
+                this.alpha = 0.2 + Math.random() * 0.3;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.01 + Math.random() * 0.02;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.fillStyle = `rgba(100, 200, 255, ${this.alpha})`;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(0, 200, 255, 0.5)';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.baseColor + this.alpha + ')';
-                ctx.shadowBlur = this.glow;
-                ctx.shadowColor = this.baseColor + this.alpha + ')';
-                ctx.fill();
-                
-                // 内层高光
-                ctx.beginPath();
-                ctx.arc(this.x - this.size * 0.3, this.y - this.size * 0.3, this.size * 0.4, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 255, 255, ' + (this.alpha * 0.6) + ')';
-                ctx.shadowBlur = 0;
                 ctx.fill();
                 ctx.restore();
             }
 
             update() {
-                // 记录拖尾
-                this.trail.push({ x: this.x, y: this.y });
-                if (this.trail.length > this.maxTrailLength) {
-                    this.trail.shift();
-                }
-
-                // 向上浮动
                 this.y += this.velocityY;
-                // 左右摆动
                 this.wobble += this.wobbleSpeed;
-                this.x += Math.sin(this.wobble) * this.wobbleAmount + this.velocityX;
-
-                // 逐渐消失
-                this.alpha -= this.decay;
-                this.life -= this.decay;
-
-                // 尺寸逐渐变小
-                this.size = Math.max(0.5, this.size * 0.998);
-            }
-
-            isDead() {
-                return this.alpha <= 0 || this.y < -50;
+                this.x += Math.sin(this.wobble) * 0.3;
+                
+                if (this.y < -50) {
+                    this.reset();
+                }
             }
         }
 
-        // 存储所有蓝藻粒子
-        let algaeParticles = [];
+        // 存储所有对象
+        let algaeClusters = [];
+        let bgParticles = [];
 
-        // 创建蓝藻群
-        function createAlgaeBurst(x, y, count = 15) {
-            for (let i = 0; i < count; i++) {
-                const offsetX = (Math.random() - 0.5) * 60;
-                const offsetY = (Math.random() - 0.5) * 30;
-                algaeParticles.push(new AlgaeParticle(x + offsetX, y + offsetY));
+        // 初始化背景粒子
+        function initBackgroundParticles() {
+            for (let i = 0; i < 30; i++) {
+                bgParticles.push(new BackgroundParticle());
+            }
+        }
+
+        // 创建蓝藻团块
+        function createAlgaeCluster(x, y) {
+            const clusterCount = 1 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < clusterCount; i++) {
+                const offsetX = (Math.random() - 0.5) * 80;
+                const offsetY = (Math.random() - 0.5) * 40;
+                algaeClusters.push(new AlgaeCluster(x + offsetX, y + offsetY));
             }
         }
 
@@ -388,55 +471,64 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            // 清除画布（使用半透明实现轻微拖影）
+            // 清除画布
             ctx.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
 
-            // 更新和绘制所有蓝藻粒子
-            for (let i = algaeParticles.length - 1; i >= 0; i--) {
-                algaeParticles[i].update();
-                algaeParticles[i].draw();
+            // 绘制背景粒子
+            bgParticles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // 更新和绘制蓝藻团块
+            for (let i = algaeClusters.length - 1; i >= 0; i--) {
+                algaeClusters[i].update();
+                algaeClusters[i].draw();
                 
-                if (algaeParticles[i].isDead()) {
-                    algaeParticles.splice(i, 1);
+                if (algaeClusters[i].isDead()) {
+                    algaeClusters.splice(i, 1);
                 }
             }
         }
 
-        // ========== 事件处理 ==========
+        // ========== 钢琴音效 ==========
+        const pianoNotes = [
+            261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25,
+            261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25
+        ];
 
-        // 手机端 - 触摸事件（优化多点触控）
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            for (let touch of e.touches) {
-                createAlgaeBurst(touch.clientX, touch.clientY, 12);
+        let audioContext = null;
+
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
-        }, { passive: false });
+        }
 
-        // 手机端 - 点击事件
-        canvas.addEventListener('click', (e) => {
-            createAlgaeBurst(e.clientX, e.clientY, 15);
-        });
+        function playPianoNote() {
+            if (!audioContext) return;
+            
+            const note = pianoNotes[Math.floor(Math.random() * pianoNotes.length)];
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(note, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1.5);
+        }
 
-        // 电脑端 - 键盘事件
-        document.addEventListener('keydown', (e) => {
-            const x = Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1;
-            const y = window.innerHeight * 0.5 + Math.random() * window.innerHeight * 0.3;
-            createAlgaeBurst(x, y, 20);
-        });
-
-        // 电脑端 - 鼠标点击
-        canvas.addEventListener('mousedown', (e) => {
-            createAlgaeBurst(e.clientX, e.clientY, 18);
-        });
-
-        // ========== 音乐播放 ==========
-        
-        // 音乐列表
+        // ========== 背景音乐 ==========
         const musicList = [
             {
                 name: 'Lot to Learn - 柳轻颂',
-                // 注意：QQ音乐链接需要转换为可直接播放的格式
-                // 这里使用备用音频源，你可以替换为实际的mp3链接
                 url: 'https://music.163.com/song/media/outer/url?id=1860163033.mp3'
             },
             {
@@ -447,74 +539,97 @@
 
         let currentMusicIndex = 0;
         let isPlaying = false;
-        let audio = new Audio();
-        audio.loop = false;
+        let bgAudio = new Audio();
+        bgAudio.loop = false;
+        bgAudio.volume = 0.4;
 
-        // 初始化音频
-        function initAudio() {
-            audio.src = musicList[currentMusicIndex].url;
-            audio.volume = 0.6;
+        function initBackgroundMusic() {
+            bgAudio.src = musicList[currentMusicIndex].url;
             
-            audio.addEventListener('ended', () => {
-                // 播放下一首
+            bgAudio.addEventListener('ended', () => {
                 currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
-                audio.src = musicList[currentMusicIndex].url;
+                bgAudio.src = musicList[currentMusicIndex].url;
                 if (isPlaying) {
-                    audio.play().catch(e => console.log('播放失败:', e));
+                    bgAudio.play().catch(e => console.log('播放失败:', e));
                 }
             });
 
-            audio.addEventListener('error', (e) => {
+            bgAudio.addEventListener('error', (e) => {
                 console.log('音频加载失败:', e);
-                musicInfo.textContent = '音乐加载失败';
             });
         }
 
-        // 播放/暂停控制
         function toggleMusic() {
             if (isPlaying) {
-                audio.pause();
+                bgAudio.pause();
                 musicBtn.textContent = '🎵';
                 musicBtn.classList.remove('playing');
                 isPlaying = false;
             } else {
-                audio.play().then(() => {
+                bgAudio.play().then(() => {
                     musicBtn.textContent = '⏸️';
                     musicBtn.classList.add('playing');
                     isPlaying = true;
                 }).catch(e => {
                     console.log('播放失败:', e);
-                    musicInfo.textContent = '点击页面后重试';
                 });
             }
         }
 
-        // 音乐按钮事件
         musicBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleMusic();
         });
 
-        // 更新音乐信息显示
         function updateMusicInfo() {
             musicInfo.textContent = musicList[currentMusicIndex].name;
         }
 
+        // ========== 事件处理 ==========
+
+        // 触摸事件（优化多点触控）
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initAudioContext();
+            
+            for (let touch of e.touches) {
+                createAlgaeCluster(touch.clientX, touch.clientY);
+                playPianoNote();
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('click', (e) => {
+            initAudioContext();
+            createAlgaeCluster(e.clientX, e.clientY);
+            playPianoNote();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            initAudioContext();
+            const x = Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1;
+            const y = window.innerHeight * 0.5 + Math.random() * window.innerHeight * 0.3;
+            createAlgaeCluster(x, y);
+            playPianoNote();
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            initAudioContext();
+            createAlgaeCluster(e.clientX, e.clientY);
+            playPianoNote();
+        });
+
         // ========== 初始化 ==========
 
-        // 开始按钮点击（用于触发音频自动播放）
         startBtn.addEventListener('click', () => {
-            initAudio();
+            initAudioContext();
+            initBackgroundMusic();
             updateMusicInfo();
+            initBackgroundParticles();
             
-            // 隐藏加载和开始按钮
             loading.classList.add('hidden');
             startBtn.classList.add('hidden');
             
-            // 自动播放音乐
             toggleMusic();
-            
-            // 启动动画
             animate();
             
             // 初始创建一些蓝藻
@@ -523,37 +638,32 @@
                     setTimeout(() => {
                         const x = Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1;
                         const y = window.innerHeight * 0.7 + Math.random() * window.innerHeight * 0.2;
-                        createAlgaeBurst(x, y, 10);
-                    }, i * 200);
+                        createAlgaeCluster(x, y);
+                    }, i * 300);
                 }
             }, 500);
         });
 
-        // 页面加载完成后显示开始按钮
         window.addEventListener('load', () => {
             setTimeout(() => {
                 loading.classList.add('hidden');
             }, 1000);
         });
 
-        // 性能优化 - 限制粒子数量
-        const MAX_PARTICLES = 500;
+        // 性能优化 - 限制团块数量
+        const MAX_CLUSTERS = 150;
         setInterval(() => {
-            if (algaeParticles.length > MAX_PARTICLES) {
-                algaeParticles.splice(0, algaeParticles.length - MAX_PARTICLES);
+            if (algaeClusters.length > MAX_CLUSTERS) {
+                algaeClusters.splice(0, algaeClusters.length - MAX_CLUSTERS);
             }
-        }, 1000);
+        }, 500);
 
-        // 页面可见性变化时暂停/恢复
+        // 页面可见性变化
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                if (isPlaying) {
-                    audio.pause();
-                }
+                if (isPlaying) bgAudio.pause();
             } else {
-                if (isPlaying) {
-                    audio.play().catch(e => console.log(e));
-                }
+                if (isPlaying) bgAudio.play().catch(e => console.log(e));
             }
         });
     </script>
