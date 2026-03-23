@@ -637,81 +637,36 @@
             { name: '星茶会 (钢琴版) - 兮沐', url: '星茶会.mp3' }
         ];
         let currentMusicIndex = 0;
-        let isMusicPlaying = false;
         let bgAudio = new Audio();
         bgAudio.loop = false;
-        bgAudio.volume = 0.6;
+        bgAudio.volume = 0.5;
 
         function initBackgroundMusic() {
-            loadMusic(currentMusicIndex);
+            bgAudio.src = musicList[currentMusicIndex].url;
+            bgAudio.addEventListener('ended', () => {
+                currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
+                bgAudio.src = musicList[currentMusicIndex].url;
+                if (isMusicPlaying) bgAudio.play().catch(e => console.log(e));
+            });
+        }
 
-            
-             // 监听可以播放时
-            bgAudio.addEventListener('canplaythrough', () => {
-                 console.log('音乐已就绪:', musicList[currentMusicIndex].name);
-            });
-            // 监听加载失败
-            bgAudio.addEventListener('error', (e) => {
-                console.error('音乐加载失败:', e);
-                musicInfo.textContent = '⚠️ 音乐加载失败';
-            });
-            // 监听播放结束，切换下一首
-             bgAudio.addEventListener('ended', () => {
-                  console.log('歌曲结束，切换下一首');
-                 // 切换到下一首
-                 currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
-                 loadMusic(currentMusicIndex);
-                 // 自动播放下一首
-                 bgAudio.play().catch(err => {
-                      console.log('自动播放失败:', err);
-                      isMusicPlaying = false;
-                      updateMusicIcon();
-                 });
-                  // 更新音乐信息显示
-                 updateMusicInfo();
-              });
-            }
-        // 加载指定索引的音乐
-        function loadMusic(index) {
-            bgAudio.src = musicList[index].url;
-            bgAudio.load();  // 重新加载音频
-        }
-        // 更新音乐信息显示
-        function updateMusicInfo() {
-             if (musicInfo) {
-                  musicInfo.textContent = isMusicPlaying ? 
-                      '🎵 ' + musicList[currentMusicIndex].name
-                      '🎵 音乐已暂停';
-              }
-         }
-        // 更新音乐图标（暂停/播放符号）
-        function updateMusicIcon() {
-            if (musicInfo) {
-                musicIcon.textContent = isMusicPlaying ? '⏸️' : '▶️';
-            }
-        }
-        // 切换音乐播放/暂停
         function toggleMusic() {
-              if (!bgAudio.src) {
-                   loadMusic(currentMusicIndex);
-               }
-              if (isMusicPlaying) {
-                   // 当前正在播放，执行暂停
-                   bgAudio.pause();
-                   isMusicPlaying = false;
-                    musicInfo.textContent = '🎵 音乐已暂停';
-                } else {
-                   // 当前暂停，执行播放
-                   bgAudio.play().then(() => {
-                        isMusicPlaying = true;
-                        updateMusicInfo();
-                   }).catch(err => {
-                       console.error('播放失败:', err);
-                       musicInfo.textContent = '⚠️ 播放失败，请重试';
-                       });
-                    }
-                 updateMusicIcon();
-           } 
+            if (isMusicPlaying) {
+                bgAudio.pause();
+                musicBtn.textContent = '🎵';
+                musicBtn.classList.remove('playing');
+                isMusicPlaying = false;
+            } else {
+                bgAudio.play().then(() => {
+                    musicBtn.textContent = '⏸️';
+                    musicBtn.classList.add('playing');
+                    isMusicPlaying = true;
+                }).catch(e => console.log(e));
+            }
+        }
+
+        musicBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
+        function updateMusicInfo() { musicInfo.textContent = musicList[currentMusicIndex].name; }
 
         // ========== 事件处理 ==========
         canvas.addEventListener('touchstart', (e) => {
@@ -750,26 +705,18 @@
             
             loading.classList.add('hidden');
             startBtn.classList.add('hidden');
-            isMusicPlaying = true;
-            bgAudio.play().catch(err => {
-                 console.log('首次播放可能需要用户交互:', err);
-            });
-            updateMusicInfo();
+            toggleMusic();
             animate();
             
             setTimeout(() => {
                 for (let i = 0; i < 3; i++) {
                     setTimeout(() => {
                         createAlgaeBurst(window.innerWidth * 0.5, window.innerHeight * 0.8);
-                     }, i * 400);
-                 }
-             }, 500);
-          });
-          if (musicInfo) {
-               musicInfo.addEventListener('click', () => {
-                    toggleMusic();
-                });
-          }
+                    }, i * 400);
+                }
+            }, 500);
+        });
+
         window.addEventListener('load', () => {
             setTimeout(() => loading.classList.add('hidden'), 1000);
         });
