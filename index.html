@@ -631,49 +631,43 @@
             oscillator.stop(audioContext.currentTime + 1.8);
         }
 
-       // ========== 背景音乐 ==========
-// ✅ 使用相对路径，最稳定，不受 CDN 限制，不被广告插件拦截
-const musicList = [
-    {
-        name: 'Lot to Learn - 柳轻颂',
-        url: 'lot_to_learn.mp3'  // 只要文件和 html 在同一级目录，这样写即可
-    },
-    {
-        name: '星茶会 (钢琴版) - 兮沐',
-        url: '星茶会.mp3'        // 中文文件名在现代浏览器完全支持
-    }
-];
+        // ========== 背景音乐 ==========
+        const musicList = [
+            { name: 'Lot to Learn - 柳轻颂', url: 'lot_to_learn.mp3' },
+            { name: '星茶会 (钢琴版) - 兮沐', url: '星茶会.mp3' }
+        ];
+        let currentMusicIndex = 0;
+        let bgAudio = new Audio();
+        bgAudio.loop = false;
+        bgAudio.volume = 0.5;
 
-let currentMusicIndex = 0;
-let bgAudio = new Audio();
-bgAudio.loop = false;
-bgAudio.volume = 0.6;
-
-function initBackgroundMusic() {
-    // 设置音频源
-    bgAudio.src = musicList[currentMusicIndex].url;
-    
-    // 监听加载成功
-    bgAudio.addEventListener('canplaythrough', () => {
-        console.log('音乐已就绪:', musicList[currentMusicIndex].name);
-    }, { once: true }); // 只触发一次
-
-    // 监听加载失败
-    bgAudio.addEventListener('error', (e) => {
-        console.error('音乐加载失败:', e);
-        musicInfo.textContent = '⚠️ 音乐文件未找到';
-    });
-
-    // 监听播放结束，切换下一首
-    bgAudio.addEventListener('ended', () => {
-        currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
-        bgAudio.src = musicList[currentMusicIndex].url;
-        if (isMusicPlaying) {
-            bgAudio.play().catch(err => console.log('自动播放被阻止:', err));
+        function initBackgroundMusic() {
+            bgAudio.src = musicList[currentMusicIndex].url;
+            bgAudio.addEventListener('ended', () => {
+                currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
+                bgAudio.src = musicList[currentMusicIndex].url;
+                if (isMusicPlaying) bgAudio.play().catch(e => console.log(e));
+            });
         }
-        updateMusicInfo();
-    });
-}
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                bgAudio.pause();
+                musicBtn.textContent = '🎵';
+                musicBtn.classList.remove('playing');
+                isMusicPlaying = false;
+            } else {
+                bgAudio.play().then(() => {
+                    musicBtn.textContent = '⏸️';
+                    musicBtn.classList.add('playing');
+                    isMusicPlaying = true;
+                }).catch(e => console.log(e));
+            }
+        }
+
+        musicBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
+        function updateMusicInfo() { musicInfo.textContent = musicList[currentMusicIndex].name; }
+
         // ========== 事件处理 ==========
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
