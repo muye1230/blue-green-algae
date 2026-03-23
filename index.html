@@ -227,10 +227,6 @@
         }
     </style>
 </head>
-<audio id="bgMusic" preload="auto">
-    <source src="music/lot_to_learn.mp3" type="audio/mpeg">
-    <source src="music/lot_to_learn.ogg" type="audio/ogg">
-</audio>
 <body>
     <!-- 加载页面 -->
     <div class="loading" id="loading">
@@ -273,7 +269,6 @@
         const loading = document.getElementById('loading');
         const startBtn = document.getElementById('startBtn');
         const musicBtn = document.getElementById('musicBtn');
-        const bgAudio = document.getElementById('bgMusic');
         const musicInfo = document.getElementById('musicInfo');
 
         // 检测微信浏览器
@@ -643,7 +638,7 @@
         ];
         let currentMusicIndex = 0;
         let bgAudio = new Audio();
-        bgAudio.loop = true;
+        bgAudio.loop = false;
         bgAudio.volume = 0.5;
 
         function initBackgroundMusic() {
@@ -669,19 +664,6 @@
                 }).catch(e => console.log(e));
             }
         }
-        // 播放当前歌曲
-        function playCurrentSong() {
-             bgAudio.src = songs[currentSongIndex].src;
-             bgAudio.load();
-             bgAudio.play().then(() => {
-                 updateMusicInfo();
-          }).catch(e => console.error("播放失败:", e));
-        }
-        // 音乐播放结束事件
-        bgAudio.addEventListener('ended', function() {
-            currentSongIndex = (currentSongIndex + 1) % songs.length;
-            playCurrentSong();
-         });
 
         musicBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
         function updateMusicInfo() { musicInfo.textContent = musicList[currentMusicIndex].name; }
