@@ -605,7 +605,7 @@
         const pianoNotes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
         let audioContext = null;
         let isMusicPlaying = false;
-        let pianoVolume = 0.10; // 基础音量稍调低，避免干扰
+        let pianoVolume = 0.12; // 基础音量稍调低，避免干扰
 
         function initAudioContext() {
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -631,25 +631,60 @@
             oscillator.stop(audioContext.currentTime + 1.8);
         }
 
-        // ========== 背景音乐 ==========
+        // ========== 背景音乐 (修复循环播放死锁问题) ==========
         const musicList = [
             { name: 'Lot to Learn - 柳轻颂', url: 'lot_to_learn.mp3' },
             { name: '星茶会 (钢琴版) - 兮沐', url: '星茶会.mp3' }
         ];
         let currentMusicIndex = 0;
         let bgAudio = new Audio();
+        // 关键修复1: 关闭 loop 属性，改用 ended 事件手动切换，避免死锁
         bgAudio.loop = false;
-        bgAudio.volume = 0.5;
+        bgAudio.volume = 0.6;
 
-        function initBackgroundMusic() {
-            bgAudio.src = musicList[currentMusicIndex].url;
-            bgAudio.addEventListener('ended', () => {
-                currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
-                bgAudio.src = musicList[currentMusicIndex].url;
-                if (isMusicPlaying) bgAudio.play().catch(e => console.log(e));
-            });
+        // 更新音乐信息显示
+        function updateMusicInfo() {
+            musicInfo.textContent = musicList[currentMusicIndex].name;
         }
 
+        // 切换到下一首歌曲
+        function playNextSong() {
+            // 更新索引到下一首，如果到了末尾则回到第一首
+            currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
+            const nextSong = musicList[currentMusicIndex];
+            bgAudio.src = nextSong.url;
+            updateMusicInfo();
+            
+            // 如果当前是播放状态，则自动播放下一首；否则只切换歌曲，保持暂停状态
+            if (isMusicPlaying) {
+                bgAudio.play().catch(err => {
+                    // 如果自动播放被浏览器阻止（极少数情况），静默失败，用户可手动点击播放按钮
+                    console.log("自动播放下一首被阻止:", err);
+                    // 如果播放失败，则更新按钮状态为暂停图标，让用户手动重试
+                    if (err.name === "NotAllowedError") {
+                        isMusicPlaying = false;
+                        musicBtn.textContent = '🎵';
+                        musicBtn.classList.remove('playing');
+                    }
+                });
+            }
+        }
+
+        // 初始化背景音乐并绑定结束事件
+        function initBackgroundMusic() {
+            // 设置第一首歌曲
+            currentMusicIndex = 0;
+            bgAudio.src = musicList[currentMusicIndex].url;
+            updateMusicInfo();
+            
+            // 关键修复2: 使用 onended 事件（而不是 addEventListener），确保只有一个回调，并实现自动切换
+            bgAudio.onended = function() {
+                // 歌曲自然结束，切换到下一首
+                playNextSong();
+            };
+        }
+
+        // 切换播放/暂停
         function toggleMusic() {
             if (isMusicPlaying) {
                 bgAudio.pause();
@@ -657,16 +692,25 @@
                 musicBtn.classList.remove('playing');
                 isMusicPlaying = false;
             } else {
+                // 尝试播放当前音频
                 bgAudio.play().then(() => {
                     musicBtn.textContent = '⏸️';
                     musicBtn.classList.add('playing');
                     isMusicPlaying = true;
-                }).catch(e => console.log(e));
+                }).catch(err => {
+                    console.log("音乐播放失败:", err);
+                    // 微信或浏览器自动播放策略限制时，提示用户
+                    if (err.name === "NotAllowedError") {
+                        musicInfo.textContent = "请点击页面开启音乐";
+                        setTimeout(() => {
+                            if (!isMusicPlaying) updateMusicInfo();
+                        }, 2000);
+                    }
+                });
             }
         }
 
         musicBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
-        function updateMusicInfo() { musicInfo.textContent = musicList[currentMusicIndex].name; }
 
         // ========== 事件处理 ==========
         canvas.addEventListener('touchstart', (e) => {
@@ -699,15 +743,15 @@
         // ========== 初始化 ==========
         startBtn.addEventListener('click', () => {
             initAudioContext();
-            initBackgroundMusic();
-            updateMusicInfo();
+            initBackgroundMusic();     // 初始化音乐，修复循环逻辑
             initBackgroundParticles();
             
             loading.classList.add('hidden');
             startBtn.classList.add('hidden');
-            toggleMusic();
-            animate();
+            toggleMusic();             // 开始播放音乐（用户手势触发）
+            animate();                // 启动动画
             
+            // 开场动画效果
             setTimeout(() => {
                 for (let i = 0; i < 3; i++) {
                     setTimeout(() => {
@@ -729,9 +773,13 @@
             }
         }, 500);
 
+        // 页面可见性变化时，保持音乐播放状态
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && isMusicPlaying) bgAudio.pause();
-            else if (isMusicPlaying) bgAudio.play().catch(e => console.log(e));
+            if (document.hidden && isMusicPlaying) {
+                bgAudio.pause();
+            } else if (!document.hidden && isMusicPlaying) {
+                bgAudio.play().catch(e => console.log(e));
+            }
         });
     </script>
 </body>
