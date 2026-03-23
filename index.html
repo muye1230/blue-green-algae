@@ -2,23 +2,30 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="wechat-enable-web-view-scroll" content="false">
     <title>🌊 魔法蓝藻 - 凝聚与律动</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         body {
             overflow: hidden;
-            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%);
-            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(180deg, #0a1628 0%, #1a2840 40%, #2a3850 70%, #1a2840 100%);
             touch-action: none;
-            -webkit-tap-highlight-color: transparent;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
         }
 
         canvas {
@@ -26,42 +33,168 @@
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 1;
+            width: 100%;
+            height: 100%;
         }
 
-        /* 加载界面 */
+        /* 光晕层 - 保持微弱环境光 */
+        .glow-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 50% 80%, rgba(0, 150, 200, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* 音乐控制面板 */
+        .music-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .music-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4);
+        }
+
+        .music-btn:active {
+            transform: scale(0.9);
+        }
+
+        .music-btn.playing {
+            animation: pulse-music 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-music {
+            0%, 100% { box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4); }
+            50% { box-shadow: 0 4px 20px rgba(0, 198, 255, 0.8); }
+        }
+
+        .music-info {
+            color: rgba(200, 230, 255, 0.8);
+            font-size: 12px;
+            max-width: 140px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 提示文字 */
+        .hint {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(200, 230, 255, 0.7);
+            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+            text-align: center;
+            pointer-events: none;
+            z-index: 100;
+            text-shadow: 0 0 15px rgba(0, 200, 255, 0.8);
+            animation: hint-fade 4s ease-in-out forwards;
+            padding: 0 20px;
+            line-height: 1.8;
+        }
+
+        @keyframes hint-fade {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .wechat-hint {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 200, 255, 0.15);
+            padding: 5px 12px;
+            border-radius: 15px;
+            color: rgba(200, 230, 255, 0.7);
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            border: 1px solid rgba(0, 200, 255, 0.2);
+        }
+
+        /* 底部光效 */
+        .bottom-lights {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: radial-gradient(ellipse at 50% 100%, rgba(0, 200, 255, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 40;
+        }
+
+        /* 加载提示 */
         .loading {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%);
+            background: linear-gradient(180deg, #0a1628 0%, #1a2840 100%);
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            z-index: 1000;
-            transition: opacity 0.8s ease;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
         }
 
         .loading.hidden {
             opacity: 0;
             pointer-events: none;
-            display: none;
         }
 
         .loading-text {
-            color: #0097a7;
-            font-size: 1.3rem;
+            color: rgba(200, 230, 255, 0.9);
+            font-size: 18px;
             margin-top: 20px;
-            text-shadow: 0 0 8px rgba(0, 151, 167, 0.3);
-            animation: pulse 1.5s ease-in-out infinite;
+            font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+            text-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 200, 255, 0.2);
+            border-top-color: #00c6ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            box-shadow: 0 0 30px rgba(0, 200, 255, 0.5);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         /* 开始按钮 */
@@ -71,525 +204,541 @@
             left: 50%;
             transform: translate(-50%, -50%);
             padding: 18px 45px;
-            font-size: 1.3rem;
-            color: #fff;
-            background: linear-gradient(135deg, #26c6da, #00bcd4);
+            font-size: 18px;
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            color: white;
             border: none;
-            border-radius: 50px;
+            border-radius: 35px;
             cursor: pointer;
-            z-index: 999;
-            box-shadow: 0 8px 25px rgba(0, 188, 212, 0.4);
+            z-index: 10000;
+            box-shadow: 0 10px 40px rgba(0, 198, 255, 0.5);
             transition: all 0.3s ease;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .start-btn.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .start-btn:hover {
-            transform: translate(-50%, -50%) scale(1.05);
-            box-shadow: 0 12px 35px rgba(0, 188, 212, 0.6);
+            font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
+            letter-spacing: 2px;
         }
 
         .start-btn:active {
-            transform: translate(-50%, -50%) scale(0.98);
+            transform: translate(-50%, -50%) scale(0.95);
         }
 
-        /* 右上角音乐控制 */
-        .music-control {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.85);
-            padding: 8px 16px;
-            border-radius: 25px;
-            backdrop-filter: blur(10px);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0, 188, 212, 0.2);
+        .start-btn.hidden {
             opacity: 0;
-            pointer-events: none;
-        }
-
-        .music-control.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .music-control:hover {
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 4px 15px rgba(0, 188, 212, 0.3);
-        }
-
-        .music-icon {
-            width: 28px;
-            height: 28px;
-            background: linear-gradient(135deg, #26c6da, #00bcd4);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 14px;
-            color: #fff;
-        }
-
-        .music-info {
-            color: #0097a7;
-            font-size: 13px;
-            max-width: 180px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 500;
-        }
-
-        /* 操作提示 */
-        .tips {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(0, 151, 167, 0.8);
-            font-size: 13px;
-            text-align: center;
-            z-index: 999;
-            line-height: 1.6;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 10px 20px;
-            border-radius: 20px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
-        }
-
-        .tips.visible {
-            opacity: 1;
-        }
-
-        .tips.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        /* 粒子容器 */
-        #particle-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
             pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <!-- 加载界面 -->
+    <!-- 加载页面 -->
     <div class="loading" id="loading">
-        <div class="loading-text">🌊 正在唤醒魔法蓝藻...</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在唤醒魔法蓝藻...</div>
     </div>
 
     <!-- 开始按钮 -->
-    <button class="start-btn" id="startBtn">✨ 开启梦幻之旅</button>
+    <button class="start-btn" id="startBtn">🌊 开启梦幻之旅</button>
 
-    <!-- 右上角音乐控制 -->
-    <div class="music-control" id="musicControl">
-        <div class="music-icon" id="musicIcon">⏸️</div>
+    <canvas id="canvas"></canvas>
+    
+    <!-- 光晕层 -->
+    <div class="glow-layer"></div>
+    
+    <!-- 底部光效 -->
+    <div class="bottom-lights"></div>
+    
+    <!-- 微信提示 -->
+    <div class="wechat-hint" id="wechatHint"></div>
+    
+    <!-- 音乐控制 -->
+    <div class="music-control">
+        <button class="music-btn" id="musicBtn">🎵</button>
         <div class="music-info" id="musicInfo">点击播放</div>
     </div>
-
-    <!-- 操作提示 -->
-    <div class="tips" id="tips">
+    
+    <!-- 提示文字 -->
+    <div class="hint" id="hint">
         📱 手机：点击屏幕任意位置<br>
         💻 电脑：按任意键 或 点击鼠标<br>
         ✨ 轻点舒缓，快击灵动
     </div>
 
-    <!-- 画布 -->
-    <canvas id="canvas"></canvas>
-
     <script>
-        // ========== 全局变量 ==========
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const hint = document.getElementById('hint');
+        const wechatHint = document.getElementById('wechatHint');
         const loading = document.getElementById('loading');
         const startBtn = document.getElementById('startBtn');
-        const musicControl = document.getElementById('musicControl');
-        const musicIcon = document.getElementById('musicIcon');
+        const musicBtn = document.getElementById('musicBtn');
         const musicInfo = document.getElementById('musicInfo');
-        const tips = document.getElementById('tips');
 
-        let width, height;
-        let particles = [];
-        let clickParticles = [];
-        let isAnimationRunning = false;
-        let time = 0;
-        let animationId = null;
-
-        // ========== 背景音乐配置 ==========
-        const musicList = [
-            {
-                name: 'Lot to Learn - 柳轻颂',
-                url: 'lot_to_learn.mp3'
-            },
-            {
-                name: '星茶会 (钢琴版) - 兮沐',
-                url: '星茶会.mp3'
-            }
-        ];
-
-        let currentMusicIndex = 0;
-        let isMusicPlaying = false;
-        let bgAudio = null;
-        let musicInitialized = false;
-
-        // ========== 音乐功能 ==========
-        function initBackgroundMusic() {
-            if (musicInitialized) return;
-            
-            bgAudio = new Audio();
-            bgAudio.volume = 0.6;
-            bgAudio.loop = false;
-            musicInitialized = true;
-
-            loadMusic(currentMusicIndex);
-
-            // 监听播放结束 -> 自动切歌
-            bgAudio.addEventListener('ended', function onEnded() {
-                console.log('🎵 歌曲播放结束，切换下一首');
-                switchMusic();
-            }, { once: false });
-
-            // 监听加载错误
-            bgAudio.addEventListener('error', function onError(e) {
-                console.error('❌ 音乐加载失败:', e);
-                musicInfo.textContent = '⚠️ 音乐加载失败';
-                isMusicPlaying = false;
-                updateMusicIcon();
-            });
+        // 检测微信浏览器
+        function isWeChat() {
+            return /micromessenger/i.test(navigator.userAgent);
         }
 
-        function loadMusic(index) {
-            if (!bgAudio) return;
-            
-            const music = musicList[index];
-            bgAudio.src = music.url;
-            bgAudio.load();
-
-            if (musicInfo) {
-                musicInfo.textContent = music.name;
-            }
-            console.log('🔄 已加载:', music.name);
+        if (isWeChat()) {
+            wechatHint.textContent = '🌊 微信中打开';
         }
 
-        function switchMusic() {
-            currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
-            isMusicPlaying = true;
-            loadMusic(currentMusicIndex);
-
-            if (bgAudio) {
-                bgAudio.play().then(() => {
-                    console.log('▶️ 自动播放成功');
-                    updateMusicIcon();
-                }).catch(error => {
-                    console.error('⚠️ 自动播放失败:', error);
-                    isMusicPlaying = false;
-                    updateMusicIcon();
-                });
-            }
-        }
-
-        function toggleMusic() {
-            if (!bgAudio) {
-                initBackgroundMusic();
-            }
-
-            if (!bgAudio.src) {
-                loadMusic(currentMusicIndex);
-            }
-
-            if (isMusicPlaying) {
-                bgAudio.pause();
-                isMusicPlaying = false;
-                console.log('️ 已暂停');
-            } else {
-                bgAudio.play().then(() => {
-                    isMusicPlaying = true;
-                    console.log('▶️ 已播放');
-                }).catch(error => {
-                    console.error('❌ 播放失败:', error);
-                });
-            }
-
-            updateMusicIcon();
-        }
-
-        function updateMusicIcon() {
-            if (musicIcon) {
-                musicIcon.textContent = isMusicPlaying ? '️' : '▶️';
-            }
-        }
-
-        // ========== 画布设置 ==========
+        // 设置画布尺寸
         function resizeCanvas() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = window.innerWidth * window.devicePixelRatio;
+            canvas.height = window.innerHeight * window.devicePixelRatio;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-        // ========== 粒子类（优化版） ==========
-        class Particle {
-            constructor() {
-                this.reset();
+        // 防止微信下拉刷新
+        document.body.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // ========== 交互频率监测器 (核心逻辑) ==========
+        const clickTracker = {
+            clicks: [],
+            threshold: 500, // 毫秒：在此时间内多次点击视为高频
+            
+            registerClick: function() {
+                const now = Date.now();
+                // 移除超过阈值的旧点击记录
+                this.clicks = this.clicks.filter(time => now - time < this.threshold);
+                this.clicks.push(now);
+                
+                // 如果短时间内点击次数 > 2次，返回 true (高频模式)
+                return this.clicks.length > 2;
+            },
+            
+            getIntensity: function() {
+                // 根据点击密度返回加速系数 (1.0 - 3.0)
+                const count = this.clicks.length;
+                if (count <= 2) return 1.0;
+                if (count <= 5) return 1.8;
+                return 2.5;
             }
+        };
 
-            reset() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 2.5 + 1;
-                this.speedX = (Math.random() - 0.5) * 0.3;
-                this.speedY = (Math.random() - 0.5) * 0.3;
-                this.hue = 180 + Math.random() * 40;
-                this.saturation = 70 + Math.random() * 30;
-                this.lightness = 60 + Math.random() * 20;
-                this.alpha = 0.4 + Math.random() * 0.4;
-                this.pulseSpeed = 0.01 + Math.random() * 0.015;
-                this.pulseOffset = Math.random() * Math.PI * 2;
-            }
-
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                if (this.x < 0 || this.x > width) this.speedX *= -1;
-                if (this.y < 0 || this.y > height) this.speedY *= -1;
-
-                this.pulse = Math.sin(time * this.pulseSpeed + this.pulseOffset);
-            }
-
-            draw() {
-                const currentSize = this.size + this.pulse * 0.3;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, Math.max(0.3, currentSize), 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${this.hue}, ${this.saturation}%, ${this.lightness}%, ${this.alpha})`;
-                ctx.fill();
-            }
-        }
-
-        // ========== 点击粒子效果 ==========
-        class ClickParticle {
-            constructor(x, y) {
+        // ========== 蓝藻粒子类 ==========
+        class AlgaeParticle {
+            constructor(x, y, clusterId, isFastMode) {
                 this.x = x;
                 this.y = y;
-                this.size = Math.random() * 4 + 2;
-                this.speed = Math.random() * 2 + 1.5;
-                this.angle = Math.random() * Math.PI * 2;
-                this.hue = 180 + Math.random() * 40;
-                this.alpha = 1;
-                this.decay = 0.02 + Math.random() * 0.015;
-                this.gravity = 0.03;
-                this.velocityX = Math.cos(this.angle) * this.speed;
-                this.velocityY = Math.sin(this.angle) * this.speed;
-            }
-
-            update() {
-                this.x += this.velocityX;
-                this.y += this.velocityY;
-                this.velocityY += this.gravity;
-                this.alpha -= this.decay;
-                this.size *= 0.97;
+                this.clusterId = clusterId;
+                
+                // 蓝藻颜色
+                const colors = [
+                    { r: 0, g: 200, b: 255 },
+                    { r: 0, g: 180, b: 230 },
+                    { r: 50, g: 220, b: 255 },
+                    { r: 100, g: 240, b: 255 },
+                    { r: 0, g: 150, b: 200 },
+                    { r: 80, g: 200, b: 240 }
+                ];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 粒子大小
+                this.size = 2.5 + Math.random() * 4;
+                this.baseSize = this.size;
+                
+                // 运动参数
+                this.velocityY = -2.5 - Math.random() * 2.5; 
+                this.velocityX = (Math.random() - 0.5) * 1.5;
+                
+                // 向心力参数 (增强集聚性)
+                this.centerPull = 0.02 + Math.random() * 0.03; 
+                this.clusterCenterX = x; // 记录生成时的中心点
+                
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.03 + Math.random() * 0.03;
+                this.wobbleAmount = 0.3 + Math.random() * 0.8;
+                
+                // 透明度与消失 - 动态调整
+                this.alpha = 0.95;
+                const baseDecay = 0.004 + Math.random() * 0.003;
+                // 如果是高频模式，消失速度加快
+                this.decay = baseDecay * (isFastMode ? 2.5 : 1.0); 
+                this.life = 1;
+                
+                // 拖尾效果 - 缩短长度
+                this.trail = [];
+                this.maxTrailLength = isFastMode ? 6 : 12; // 高频时更短，普通时也缩短了
+                
+                // 形状变化
+                this.shapeType = Math.floor(Math.random() * 5);
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.06;
+                
+                // 发光
+                this.glow = 6 + Math.random() * 8;
             }
 
             draw() {
+                // 绘制拖尾 (更短促)
+                if (this.trail.length > 2) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        const point = this.trail[i];
+                        // 拖尾透明度衰减更快
+                        const trailAlpha = (i / this.trail.length) * this.alpha * 0.3;
+                        ctx.lineTo(point.x, point.y);
+                    }
+                    ctx.strokeStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.alpha * 0.3})`;
+                    ctx.lineWidth = this.size * 0.4;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // 绘制主体
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                const drawAlpha = this.alpha;
+                
+                if (this.shapeType === 0) {
+                    // 圆形
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${drawAlpha})`;
+                    ctx.shadowBlur = this.glow;
+                    ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${drawAlpha})`;
+                    ctx.fill();
+                } else if (this.shapeType === 1) {
+                    // 星形
+                    this.drawStar(0, 0, 5, this.size, this.size * 0.5, drawAlpha);
+                } else if (this.shapeType === 2) {
+                    // 三角形
+                    this.drawPolygon(0, 0, 3, this.size * 1.2, drawAlpha);
+                } else if (this.shapeType === 3) {
+                    // 方形
+                    ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${drawAlpha})`;
+                    ctx.shadowBlur = this.glow;
+                    ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${drawAlpha})`;
+                    ctx.fillRect(-this.size, -this.size, this.size * 2, this.size * 2);
+                } else {
+                    // 不规则
+                    this.drawIrregular(0, 0, this.size, drawAlpha);
+                }
+                
+                ctx.restore();
+            }
+
+            drawStar(cx, cy, spikes, outerRadius, innerRadius, alpha) {
+                let rot = Math.PI / 2 * 3;
+                let step = Math.PI / spikes;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, Math.max(0.3, this.size), 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${this.hue}, 80%, 60%, ${this.alpha})`;
+                ctx.moveTo(cx, cy - outerRadius);
+                for (let i = 0; i < spikes; i++) {
+                    let x = cx + Math.cos(rot) * outerRadius;
+                    let y = cy + Math.sin(rot) * outerRadius;
+                    ctx.lineTo(x, y);
+                    rot += step;
+                    x = cx + Math.cos(rot) * innerRadius;
+                    y = cy + Math.sin(rot) * innerRadius;
+                    ctx.lineTo(x, y);
+                    rot += step;
+                }
+                ctx.closePath();
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+                ctx.shadowBlur = this.glow;
+                ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
                 ctx.fill();
+            }
+
+            drawPolygon(cx, cy, sides, radius, alpha) {
+                ctx.beginPath();
+                for (let i = 0; i < sides; i++) {
+                    const angle = (i * 2 * Math.PI / sides) - Math.PI / 2;
+                    const x = cx + radius * Math.cos(angle);
+                    const y = cy + radius * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+                ctx.shadowBlur = this.glow;
+                ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+                ctx.fill();
+            }
+
+            drawIrregular(cx, cy, size, alpha) {
+                ctx.beginPath();
+                const points = 5 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < points; i++) {
+                    const angle = (i * 2 * Math.PI / points);
+                    const radius = size * (0.8 + Math.random() * 0.4);
+                    const x = cx + radius * Math.cos(angle);
+                    const y = cy + radius * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+                ctx.shadowBlur = this.glow;
+                ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+                ctx.fill();
+            }
+
+            update() {
+                // 记录拖尾
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > this.maxTrailLength) {
+                    this.trail.shift();
+                }
+
+                // 向上浮动
+                this.y += this.velocityY;
+                
+                // 左右摆动
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * this.wobbleAmount * 0.4 + this.velocityX * 0.2;
+                
+                // 【关键】向心力逻辑：让粒子稍微向生成中心靠拢，增加紧密感
+                const dx = this.clusterCenterX - this.x;
+                this.x += dx * this.centerPull;
+
+                // 旋转
+                this.rotation += this.rotationSpeed;
+
+                // 逐渐消失
+                this.alpha -= this.decay;
+                this.life -= this.decay;
+                
+                // 尺寸变小
+                this.size = Math.max(0.8, this.baseSize * (this.life));
             }
 
             isDead() {
-                return this.alpha <= 0 || this.size <= 0.3;
+                return this.alpha <= 0 || this.y < -100;
             }
         }
 
-        // ========== 初始化粒子 ==========
-        function initParticles() {
-            particles = [];
-            const particleCount = Math.min(80, Math.floor((width * height) / 15000));
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
+        // ========== 背景浮动粒子 ==========
+        class BackgroundParticle {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * window.innerHeight;
+            }
+            reset() {
+                this.x = Math.random() * window.innerWidth;
+                this.y = window.innerHeight + 50;
+                this.size = 1 + Math.random() * 2;
+                this.velocityY = -0.1 - Math.random() * 0.2;
+                this.alpha = 0.1 + Math.random() * 0.2;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.01;
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = `rgba(100, 200, 255, ${this.alpha})`;
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = 'rgba(0, 200, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+            update() {
+                this.y += this.velocityY;
+                this.wobble += this.wobbleSpeed;
+                this.x += Math.sin(this.wobble) * 0.2;
+                if (this.y < -50) this.reset();
             }
         }
 
-        // ========== 动画循环（优化版） ==========
-        function animate() {
-            if (!isAnimationRunning) return;
+        // 存储对象
+        let algaeParticles = [];
+        let bgParticles = [];
+        let particleIdCounter = 0;
 
-            ctx.clearRect(0, 0, width, height);
-
-            time++;
-
-            // 更新和绘制背景粒子
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
+        function initBackgroundParticles() {
+            for (let i = 0; i < 20; i++) {
+                bgParticles.push(new BackgroundParticle());
             }
-
-            // 更新和绘制点击粒子
-            for (let i = clickParticles.length - 1; i >= 0; i--) {
-                clickParticles[i].update();
-                clickParticles[i].draw();
-                if (clickParticles[i].isDead()) {
-                    clickParticles.splice(i, 1);
-                }
-            }
-
-            // 绘制连接线（优化：只连接附近的粒子）
-            drawConnections();
-
-            animationId = requestAnimationFrame(animate);
         }
 
-        // ========== 绘制粒子连线 ==========
-        function drawConnections() {
-            const maxDistance = 100;
-            ctx.lineWidth = 0.3;
+        // 创建蓝藻群
+        function createAlgaeBurst(x, y) {
+            // 检查点击频率
+            const isFastMode = clickTracker.registerClick();
+            const intensity = clickTracker.getIntensity();
             
-            for (let i = 0; i < particles.length; i++) {
-                for (let j = i + 1; j < particles.length; j++) {
-                    const dx = particles[i].x - particles[j].x;
-                    const dy = particles[i].y - particles[j].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+            const clusterId = particleIdCounter++;
+            // 粒子数量适中
+            const particleCount = 12 + Math.floor(Math.random() * 15);
+            
+            // 【关键】缩小生成范围，增强紧密度
+            // 之前是 100x60，现在改为 40x25
+            const spreadX = 20; 
+            const spreadY = 12;
 
-                    if (distance < maxDistance) {
-                        const alpha = (1 - distance / maxDistance) * 0.2;
-                        ctx.strokeStyle = `rgba(0, 188, 212, ${alpha})`;
-                        ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
-                    }
+            for (let i = 0; i < particleCount; i++) {
+                const offsetX = (Math.random() - 0.5) * spreadX * 2;
+                const offsetY = (Math.random() - 0.5) * spreadY * 2;
+                algaeParticles.push(new AlgaeParticle(x + offsetX, y + offsetY, clusterId, isFastMode));
+            }
+        }
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+
+            bgParticles.forEach(p => { p.update(); p.draw(); });
+
+            for (let i = algaeParticles.length - 1; i >= 0; i--) {
+                algaeParticles[i].update();
+                algaeParticles[i].draw();
+                if (algaeParticles[i].isDead()) {
+                    algaeParticles.splice(i, 1);
                 }
             }
         }
 
-        // ========== 创建点击粒子 ==========
-        function createClickParticles(x, y) {
-            const count = 12;
-            for (let i = 0; i < count; i++) {
-                clickParticles.push(new ClickParticle(x, y));
-            }
+        // ========== 钢琴音效 ==========
+        const pianoNotes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
+        let audioContext = null;
+        let isMusicPlaying = false;
+        let pianoVolume = 0.10; // 基础音量稍调低，避免干扰
+
+        function initAudioContext() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        // ========== 事件监听 ==========
-        function handleInteraction(x, y) {
-            if (!isAnimationRunning) return;
-            createClickParticles(x, y);
+        function playPianoNote() {
+            if (!audioContext) return;
+            const note = pianoNotes[Math.floor(Math.random() * pianoNotes.length)];
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(note, audioContext.currentTime);
+            
+            // 动态音量：音乐暂停时自动变大
+            const currentVol = isMusicPlaying ? pianoVolume : pianoVolume * 2.5;
+            gainNode.gain.setValueAtTime(currentVol, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.8);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1.8);
         }
 
-        // 鼠标点击
-        canvas.addEventListener('click', function(e) {
-            handleInteraction(e.clientX, e.clientY);
-        });
+       // ========== 背景音乐 ==========
+// ✅ 使用相对路径，最稳定，不受 CDN 限制，不被广告插件拦截
+const musicList = [
+    {
+        name: 'Lot to Learn - 柳轻颂',
+        url: 'lot_to_learn.mp3'  // 只要文件和 html 在同一级目录，这样写即可
+    },
+    {
+        name: '星茶会 (钢琴版) - 兮沐',
+        url: '星茶会.mp3'        // 中文文件名在现代浏览器完全支持
+    }
+];
 
-        // 触摸事件
-        canvas.addEventListener('touchstart', function(e) {
+let currentMusicIndex = 0;
+let bgAudio = new Audio();
+bgAudio.loop = false;
+bgAudio.volume = 0.6;
+
+function initBackgroundMusic() {
+    // 设置音频源
+    bgAudio.src = musicList[currentMusicIndex].url;
+    
+    // 监听加载成功
+    bgAudio.addEventListener('canplaythrough', () => {
+        console.log('音乐已就绪:', musicList[currentMusicIndex].name);
+    }, { once: true }); // 只触发一次
+
+    // 监听加载失败
+    bgAudio.addEventListener('error', (e) => {
+        console.error('音乐加载失败:', e);
+        musicInfo.textContent = '⚠️ 音乐文件未找到';
+    });
+
+    // 监听播放结束，切换下一首
+    bgAudio.addEventListener('ended', () => {
+        currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
+        bgAudio.src = musicList[currentMusicIndex].url;
+        if (isMusicPlaying) {
+            bgAudio.play().catch(err => console.log('自动播放被阻止:', err));
+        }
+        updateMusicInfo();
+    });
+}
+        // ========== 事件处理 ==========
+        canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            for (let i = 0; i < e.touches.length; i++) {
-                handleInteraction(e.touches[i].clientX, e.touches[i].clientY);
+            initAudioContext();
+            for (let touch of e.touches) {
+                createAlgaeBurst(touch.clientX, touch.clientY);
+                playPianoNote();
             }
         }, { passive: false });
 
-        // 键盘事件
-        document.addEventListener('keydown', function(e) {
-            if (!isAnimationRunning) return;
-            const x = Math.random() * width;
-            const y = Math.random() * height;
-            createClickParticles(x, y);
+        canvas.addEventListener('click', (e) => {
+            initAudioContext();
+            createAlgaeBurst(e.clientX, e.clientY);
+            playPianoNote();
         });
 
-        // 窗口大小变化
-        window.addEventListener('resize', function() {
-            resizeCanvas();
-            initParticles();
+        document.addEventListener('keydown', (e) => {
+            initAudioContext();
+            createAlgaeBurst(window.innerWidth * 0.5, window.innerHeight * 0.7);
+            playPianoNote();
         });
 
-        // 音乐控制点击
-        musicControl.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleMusic();
+        canvas.addEventListener('mousedown', (e) => {
+            initAudioContext();
+            createAlgaeBurst(e.clientX, e.clientY);
+            playPianoNote();
         });
 
-        // ========== 开始按钮点击 ==========
-        startBtn.addEventListener('click', function() {
-            console.log('🚀 开始按钮被点击');
-            
-            // 初始化背景音乐
+        // ========== 初始化 ==========
+        startBtn.addEventListener('click', () => {
+            initAudioContext();
             initBackgroundMusic();
-
-            // 设置初始音乐信息
-            if (musicInfo) {
-                musicInfo.textContent = musicList[0].name;
-            }
-
-            // 开始播放音乐
-            toggleMusic();
-
-            // 隐藏加载界面
-            loading.classList.add('hidden');
+            updateMusicInfo();
+            initBackgroundParticles();
             
-            // 显示开始按钮（添加可见类）
-            startBtn.classList.add('visible');
-
-            // 显示音乐控制和提示
-            setTimeout(() => {
-                musicControl.classList.add('visible');
-                tips.classList.add('visible');
-            }, 300);
-
-            // 开始动画
-            isAnimationRunning = true;
+            loading.classList.add('hidden');
+            startBtn.classList.add('hidden');
+            toggleMusic();
             animate();
-
-            // 3 秒后隐藏提示
+            
             setTimeout(() => {
-                tips.classList.add('hidden');
-            }, 5000);
-
-            // 隐藏开始按钮（点击后）
-            setTimeout(() => {
-                startBtn.classList.remove('visible');
-                startBtn.style.pointerEvents = 'none';
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        createAlgaeBurst(window.innerWidth * 0.5, window.innerHeight * 0.8);
+                    }, i * 400);
+                }
             }, 500);
         });
 
-        // ========== 页面加载完成后显示开始按钮 ==========
-        window.addEventListener('load', function() {
-            console.log('📄 页面加载完成');
-            
-            // 确保画布尺寸正确
-            resizeCanvas();
-            
-            // 初始化粒子
-            initParticles();
-
-            // 1.5 秒后显示开始按钮
-            setTimeout(() => {
-                startBtn.classList.add('visible');
-                console.log('✨ 开始按钮已显示');
-            }, 1500);
+        window.addEventListener('load', () => {
+            setTimeout(() => loading.classList.add('hidden'), 1000);
         });
 
-        // 预加载检查
-        console.log('🎵 页面初始化完成，等待用户交互');
+        // 性能限制
+        const MAX_PARTICLES = 350;
+        setInterval(() => {
+            if (algaeParticles.length > MAX_PARTICLES) {
+                algaeParticles.splice(0, algaeParticles.length - MAX_PARTICLES);
+            }
+        }, 500);
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isMusicPlaying) bgAudio.pause();
+            else if (isMusicPlaying) bgAudio.play().catch(e => console.log(e));
+        });
     </script>
 </body>
 </html>
