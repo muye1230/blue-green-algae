@@ -104,27 +104,30 @@
             text-overflow: ellipsis;
         }
 
-        /* 提示文字 */
+        /* 提示文字 - 延长显示时间，更清晰 */
         .hint {
             position: fixed;
             bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(200, 230, 255, 0.7);
+            color: rgba(200, 230, 255, 0.9);
             font-size: 14px;
             font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif;
             text-align: center;
             pointer-events: none;
             z-index: 100;
             text-shadow: 0 0 15px rgba(0, 200, 255, 0.8);
-            animation: hint-fade 4s ease-in-out forwards;
+            animation: hint-fade 6s ease-in-out forwards;
             padding: 0 20px;
             line-height: 1.8;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
         }
 
         @keyframes hint-fade {
             0% { opacity: 1; }
-            70% { opacity: 1; }
+            80% { opacity: 1; }
             100% { opacity: 0; }
         }
 
@@ -257,7 +260,7 @@
     <!-- 提示文字 -->
     <div class="hint" id="hint">
         📱 手机：点击屏幕任意位置<br>
-        💻 电脑：按任意键 或 点击鼠标<br>
+        💻 电脑：按字母键体验键盘分布<br>
         ✨ 轻点舒缓，快击灵动
     </div>
 
@@ -296,23 +299,17 @@
             e.preventDefault();
         }, { passive: false });
 
-        // ========== 交互频率监测器 (核心逻辑) ==========
+        // ========== 交互频率监测器 ==========
         const clickTracker = {
             clicks: [],
-            threshold: 500, // 毫秒：在此时间内多次点击视为高频
-            
+            threshold: 500,
             registerClick: function() {
                 const now = Date.now();
-                // 移除超过阈值的旧点击记录
                 this.clicks = this.clicks.filter(time => now - time < this.threshold);
                 this.clicks.push(now);
-                
-                // 如果短时间内点击次数 > 2次，返回 true (高频模式)
                 return this.clicks.length > 2;
             },
-            
             getIntensity: function() {
-                // 根据点击密度返回加速系数 (1.0 - 3.0)
                 const count = this.clicks.length;
                 if (count <= 2) return 1.0;
                 if (count <= 5) return 1.8;
@@ -326,8 +323,6 @@
                 this.x = x;
                 this.y = y;
                 this.clusterId = clusterId;
-                
-                // 蓝藻颜色
                 const colors = [
                     { r: 0, g: 200, b: 255 },
                     { r: 0, g: 180, b: 230 },
@@ -337,53 +332,33 @@
                     { r: 80, g: 200, b: 240 }
                 ];
                 this.color = colors[Math.floor(Math.random() * colors.length)];
-                
-                // 粒子大小
                 this.size = 2.5 + Math.random() * 4;
                 this.baseSize = this.size;
-                
-                // 运动参数
-                this.velocityY = -2.5 - Math.random() * 2.5; 
+                this.velocityY = -2.5 - Math.random() * 2.5;
                 this.velocityX = (Math.random() - 0.5) * 1.5;
-                
-                // 向心力参数 (增强集聚性)
-                this.centerPull = 0.02 + Math.random() * 0.03; 
-                this.clusterCenterX = x; // 记录生成时的中心点
-                
+                this.centerPull = 0.02 + Math.random() * 0.03;
+                this.clusterCenterX = x;
                 this.wobble = Math.random() * Math.PI * 2;
                 this.wobbleSpeed = 0.03 + Math.random() * 0.03;
                 this.wobbleAmount = 0.3 + Math.random() * 0.8;
-                
-                // 透明度与消失 - 动态调整
                 this.alpha = 0.95;
                 const baseDecay = 0.004 + Math.random() * 0.003;
-                // 如果是高频模式，消失速度加快
-                this.decay = baseDecay * (isFastMode ? 2.5 : 1.0); 
+                this.decay = baseDecay * (isFastMode ? 2.5 : 1.0);
                 this.life = 1;
-                
-                // 拖尾效果 - 缩短长度
                 this.trail = [];
-                this.maxTrailLength = isFastMode ? 6 : 12; // 高频时更短，普通时也缩短了
-                
-                // 形状变化
+                this.maxTrailLength = isFastMode ? 6 : 12;
                 this.shapeType = Math.floor(Math.random() * 5);
                 this.rotation = Math.random() * Math.PI * 2;
                 this.rotationSpeed = (Math.random() - 0.5) * 0.06;
-                
-                // 发光
                 this.glow = 6 + Math.random() * 8;
             }
-
             draw() {
-                // 绘制拖尾 (更短促)
                 if (this.trail.length > 2) {
                     ctx.save();
                     ctx.beginPath();
                     ctx.moveTo(this.trail[0].x, this.trail[0].y);
                     for (let i = 1; i < this.trail.length; i++) {
                         const point = this.trail[i];
-                        // 拖尾透明度衰减更快
-                        const trailAlpha = (i / this.trail.length) * this.alpha * 0.3;
                         ctx.lineTo(point.x, point.y);
                     }
                     ctx.strokeStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.alpha * 0.3})`;
@@ -393,16 +368,11 @@
                     ctx.stroke();
                     ctx.restore();
                 }
-
-                // 绘制主体
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.rotation);
-                
                 const drawAlpha = this.alpha;
-                
                 if (this.shapeType === 0) {
-                    // 圆形
                     ctx.beginPath();
                     ctx.arc(0, 0, this.size, 0, Math.PI * 2);
                     ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${drawAlpha})`;
@@ -410,25 +380,19 @@
                     ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${drawAlpha})`;
                     ctx.fill();
                 } else if (this.shapeType === 1) {
-                    // 星形
                     this.drawStar(0, 0, 5, this.size, this.size * 0.5, drawAlpha);
                 } else if (this.shapeType === 2) {
-                    // 三角形
                     this.drawPolygon(0, 0, 3, this.size * 1.2, drawAlpha);
                 } else if (this.shapeType === 3) {
-                    // 方形
                     ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${drawAlpha})`;
                     ctx.shadowBlur = this.glow;
                     ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${drawAlpha})`;
                     ctx.fillRect(-this.size, -this.size, this.size * 2, this.size * 2);
                 } else {
-                    // 不规则
                     this.drawIrregular(0, 0, this.size, drawAlpha);
                 }
-                
                 ctx.restore();
             }
-
             drawStar(cx, cy, spikes, outerRadius, innerRadius, alpha) {
                 let rot = Math.PI / 2 * 3;
                 let step = Math.PI / spikes;
@@ -450,7 +414,6 @@
                 ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
                 ctx.fill();
             }
-
             drawPolygon(cx, cy, sides, radius, alpha) {
                 ctx.beginPath();
                 for (let i = 0; i < sides; i++) {
@@ -466,7 +429,6 @@
                 ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
                 ctx.fill();
             }
-
             drawIrregular(cx, cy, size, alpha) {
                 ctx.beginPath();
                 const points = 5 + Math.floor(Math.random() * 3);
@@ -484,36 +446,19 @@
                 ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
                 ctx.fill();
             }
-
             update() {
-                // 记录拖尾
                 this.trail.push({ x: this.x, y: this.y });
-                if (this.trail.length > this.maxTrailLength) {
-                    this.trail.shift();
-                }
-
-                // 向上浮动
+                if (this.trail.length > this.maxTrailLength) this.trail.shift();
                 this.y += this.velocityY;
-                
-                // 左右摆动
                 this.wobble += this.wobbleSpeed;
                 this.x += Math.sin(this.wobble) * this.wobbleAmount * 0.4 + this.velocityX * 0.2;
-                
-                // 【关键】向心力逻辑：让粒子稍微向生成中心靠拢，增加紧密感
                 const dx = this.clusterCenterX - this.x;
                 this.x += dx * this.centerPull;
-
-                // 旋转
                 this.rotation += this.rotationSpeed;
-
-                // 逐渐消失
                 this.alpha -= this.decay;
                 this.life -= this.decay;
-                
-                // 尺寸变小
                 this.size = Math.max(0.8, this.baseSize * (this.life));
             }
-
             isDead() {
                 return this.alpha <= 0 || this.y < -100;
             }
@@ -552,7 +497,6 @@
             }
         }
 
-        // 存储对象
         let algaeParticles = [];
         let bgParticles = [];
         let particleIdCounter = 0;
@@ -563,21 +507,12 @@
             }
         }
 
-        // 创建蓝藻群
         function createAlgaeBurst(x, y) {
-            // 检查点击频率
             const isFastMode = clickTracker.registerClick();
-            const intensity = clickTracker.getIntensity();
-            
             const clusterId = particleIdCounter++;
-            // 粒子数量适中
             const particleCount = 12 + Math.floor(Math.random() * 15);
-            
-            // 【关键】缩小生成范围，增强紧密度
-            // 之前是 100x60，现在改为 40x25
-            const spreadX = 20; 
+            const spreadX = 20;
             const spreadY = 12;
-
             for (let i = 0; i < particleCount; i++) {
                 const offsetX = (Math.random() - 0.5) * spreadX * 2;
                 const offsetY = (Math.random() - 0.5) * spreadY * 2;
@@ -585,19 +520,14 @@
             }
         }
 
-        // 动画循环
         function animate() {
             requestAnimationFrame(animate);
             ctx.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
-
             bgParticles.forEach(p => { p.update(); p.draw(); });
-
             for (let i = algaeParticles.length - 1; i >= 0; i--) {
                 algaeParticles[i].update();
                 algaeParticles[i].draw();
-                if (algaeParticles[i].isDead()) {
-                    algaeParticles.splice(i, 1);
-                }
+                if (algaeParticles[i].isDead()) algaeParticles.splice(i, 1);
             }
         }
 
@@ -605,7 +535,7 @@
         const pianoNotes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
         let audioContext = null;
         let isMusicPlaying = false;
-        let pianoVolume = 0.12; // 基础音量稍调低，避免干扰
+        let pianoVolume = 0.12;
 
         function initAudioContext() {
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -616,51 +546,37 @@
             const note = pianoNotes[Math.floor(Math.random() * pianoNotes.length)];
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
-            
             oscillator.type = 'triangle';
             oscillator.frequency.setValueAtTime(note, audioContext.currentTime);
-            
-            // 动态音量：音乐暂停时自动变大
             const currentVol = isMusicPlaying ? pianoVolume : pianoVolume * 2.5;
             gainNode.gain.setValueAtTime(currentVol, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.8);
-            
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 1.8);
         }
 
-        // ========== 背景音乐 (修复循环播放死锁问题) ==========
+        // ========== 背景音乐 (已修复循环) ==========
         const musicList = [
             { name: 'Lot to Learn - 柳轻颂', url: 'lot_to_learn.mp3' },
             { name: '星茶会 (钢琴版) - 兮沐', url: '星茶会.mp3' }
         ];
         let currentMusicIndex = 0;
         let bgAudio = new Audio();
-        // 关键修复1: 关闭 loop 属性，改用 ended 事件手动切换，避免死锁
         bgAudio.loop = false;
         bgAudio.volume = 0.6;
 
-        // 更新音乐信息显示
         function updateMusicInfo() {
             musicInfo.textContent = musicList[currentMusicIndex].name;
         }
 
-        // 切换到下一首歌曲
         function playNextSong() {
-            // 更新索引到下一首，如果到了末尾则回到第一首
             currentMusicIndex = (currentMusicIndex + 1) % musicList.length;
-            const nextSong = musicList[currentMusicIndex];
-            bgAudio.src = nextSong.url;
+            bgAudio.src = musicList[currentMusicIndex].url;
             updateMusicInfo();
-            
-            // 如果当前是播放状态，则自动播放下一首；否则只切换歌曲，保持暂停状态
             if (isMusicPlaying) {
                 bgAudio.play().catch(err => {
-                    // 如果自动播放被浏览器阻止（极少数情况），静默失败，用户可手动点击播放按钮
-                    console.log("自动播放下一首被阻止:", err);
-                    // 如果播放失败，则更新按钮状态为暂停图标，让用户手动重试
                     if (err.name === "NotAllowedError") {
                         isMusicPlaying = false;
                         musicBtn.textContent = '🎵';
@@ -670,21 +586,15 @@
             }
         }
 
-        // 初始化背景音乐并绑定结束事件
         function initBackgroundMusic() {
-            // 设置第一首歌曲
             currentMusicIndex = 0;
             bgAudio.src = musicList[currentMusicIndex].url;
             updateMusicInfo();
-            
-            // 关键修复2: 使用 onended 事件（而不是 addEventListener），确保只有一个回调，并实现自动切换
             bgAudio.onended = function() {
-                // 歌曲自然结束，切换到下一首
                 playNextSong();
             };
         }
 
-        // 切换播放/暂停
         function toggleMusic() {
             if (isMusicPlaying) {
                 bgAudio.pause();
@@ -692,25 +602,57 @@
                 musicBtn.classList.remove('playing');
                 isMusicPlaying = false;
             } else {
-                // 尝试播放当前音频
                 bgAudio.play().then(() => {
                     musicBtn.textContent = '⏸️';
                     musicBtn.classList.add('playing');
                     isMusicPlaying = true;
                 }).catch(err => {
                     console.log("音乐播放失败:", err);
-                    // 微信或浏览器自动播放策略限制时，提示用户
                     if (err.name === "NotAllowedError") {
                         musicInfo.textContent = "请点击页面开启音乐";
-                        setTimeout(() => {
-                            if (!isMusicPlaying) updateMusicInfo();
-                        }, 2000);
+                        setTimeout(() => { if (!isMusicPlaying) updateMusicInfo(); }, 2000);
                     }
                 });
             }
         }
 
         musicBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
+
+        // ========== 按键映射到屏幕不同位置 ==========
+        // 键盘布局映射：第一排 QWERTYUIOP，第二排 ASDFGHJKL，第三排 ZXCVBNM
+        const row1 = ['q','w','e','r','t','y','u','i','o','p'];
+        const row2 = ['a','s','d','f','g','h','j','k','l'];
+        const row3 = ['z','x','c','v','b','n','m'];
+
+        function getPositionFromKey(key) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            let x = w * 0.5;   // 默认中央
+            let y = h * 0.7;   // 默认偏下
+
+            const lowerKey = key.toLowerCase();
+            if (row1.includes(lowerKey)) {
+                // 第一排：水平均匀分布，Y轴在屏幕上部 (35%高度)
+                const index = row1.indexOf(lowerKey);
+                const total = row1.length;
+                x = w * (index / (total - 1)) * 0.8 + w * 0.1; // 范围 10% ~ 90%
+                y = h * 0.35;
+            } else if (row2.includes(lowerKey)) {
+                // 第二排：水平均匀分布，Y轴中部 (55%高度)
+                const index = row2.indexOf(lowerKey);
+                const total = row2.length;
+                x = w * (index / (total - 1)) * 0.8 + w * 0.1;
+                y = h * 0.55;
+            } else if (row3.includes(lowerKey)) {
+                // 第三排：水平均匀分布，Y轴下部 (75%高度)
+                const index = row3.indexOf(lowerKey);
+                const total = row3.length;
+                x = w * (index / (total - 1)) * 0.8 + w * 0.1;
+                y = h * 0.75;
+            }
+            // 其他按键保持默认中央偏下位置
+            return { x, y };
+        }
 
         // ========== 事件处理 ==========
         canvas.addEventListener('touchstart', (e) => {
@@ -728,9 +670,14 @@
             playPianoNote();
         });
 
+        // 按键事件：根据按键映射位置
         document.addEventListener('keydown', (e) => {
+            // 避免按功能键（如 F5、方向键）时触发页面滚动或刷新
+            if (e.key === 'F5' || e.key === 'F12' || e.key.startsWith('Arrow')) return;
+            e.preventDefault(); // 防止按键触发浏览器默认行为（可选）
             initAudioContext();
-            createAlgaeBurst(window.innerWidth * 0.5, window.innerHeight * 0.7);
+            const pos = getPositionFromKey(e.key);
+            createAlgaeBurst(pos.x, pos.y);
             playPianoNote();
         });
 
@@ -743,15 +690,12 @@
         // ========== 初始化 ==========
         startBtn.addEventListener('click', () => {
             initAudioContext();
-            initBackgroundMusic();     // 初始化音乐，修复循环逻辑
+            initBackgroundMusic();
             initBackgroundParticles();
-            
             loading.classList.add('hidden');
             startBtn.classList.add('hidden');
-            toggleMusic();             // 开始播放音乐（用户手势触发）
-            animate();                // 启动动画
-            
-            // 开场动画效果
+            toggleMusic();
+            animate();
             setTimeout(() => {
                 for (let i = 0; i < 3; i++) {
                     setTimeout(() => {
@@ -765,7 +709,6 @@
             setTimeout(() => loading.classList.add('hidden'), 1000);
         });
 
-        // 性能限制
         const MAX_PARTICLES = 350;
         setInterval(() => {
             if (algaeParticles.length > MAX_PARTICLES) {
@@ -773,7 +716,6 @@
             }
         }, 500);
 
-        // 页面可见性变化时，保持音乐播放状态
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && isMusicPlaying) {
                 bgAudio.pause();
